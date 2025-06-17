@@ -32,16 +32,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    if (!loading && !user && pathname.startsWith("/admin") && pathname !== "/admin/login") {
-      router.push("/admin/login");
-    }
-    if (!loading && user && pathname === "/admin/login") {
-      router.push("/admin/dashboard");
+    if (!loading) {
+      const isAdminRoute = pathname.startsWith("/admin");
+      const isAuthRoute = pathname === "/admin/login" || pathname === "/admin/register";
+
+      if (isAdminRoute && !isAuthRoute && !user) {
+        router.push("/admin/login");
+      }
+      if (isAuthRoute && user) {
+        router.push("/admin/dashboard");
+      }
     }
   }, [user, loading, router, pathname]);
 
 
-  if (loading && pathname.startsWith("/admin") && pathname !== "/admin/login") {
+  if (loading && pathname.startsWith("/admin") && pathname !== "/admin/login" && pathname !== "/admin/register") {
     return <div className="flex h-screen w-screen items-center justify-center"><LoadingSpinner /></div>;
   }
 
