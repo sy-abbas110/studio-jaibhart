@@ -5,19 +5,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 export default function AddStudentPage() {
   return (
     <div className="container mx-auto py-8 px-4">
-      <Card className="max-w-4xl mx-auto shadow-xl">
-        <CardHeader>
-          <CardTitle className="text-3xl font-headline font-bold text-primary">
-            Add New Student
-          </CardTitle>
-          <CardDescription>
-            Fill in the details below to add a new student record. Ensure all information is accurate.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <AddStudentForm />
-        </CardContent>
-      </Card>
+      <div className="space-y-2 mb-6">
+        <h1 className="text-3xl font-headline font-bold text-primary">
+          Add New Student
+        </h1>
+        <p className="text-muted-foreground">
+          Register a new student in the system by filling out the details below.
+        </p>
+      </div>
+      {/* The form component itself might be wrapped in a Card, or Cards are used internally.
+          The provided example has internal cards, so we might not need an outer one here.
+          Adjusting to remove the outer Card to match the more granular card structure within the form.
+      */}
+      <AddStudentForm />
     </div>
   );
 }

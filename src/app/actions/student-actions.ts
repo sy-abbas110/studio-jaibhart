@@ -3,7 +3,8 @@
 
 import { determineStudentStatus, type DetermineStudentStatusInput } from "@/ai/flows/determine-student-status";
 import { addStudent as addStudentToFirestore } from "@/lib/firebase/student-services";
-import type { StudentFormData } from "@/lib/types";
+import type { StudentFormData } from "@/lib/types"; // Changed from StudentFormValues to StudentFormData if they are different
+import type { StudentFormValues } from "@/lib/schemas/student-schema"; // Assuming this is the validated form values type
 
 export async function getStudentStatusAction(input: DetermineStudentStatusInput) {
   try {
@@ -15,19 +16,11 @@ export async function getStudentStatusAction(input: DetermineStudentStatusInput)
   }
 }
 
-export async function addStudentAction(formData: StudentFormData): Promise<{ success: boolean; message: string; studentId?: string }> {
+export async function addStudentAction(formData: StudentFormValues): Promise<{ success: boolean; message: string; studentId?: string }> {
   try {
-    // Ensure numeric fields are correctly typed if they come from FormData
-    const parsedData: StudentFormData = {
-      ...formData,
-      courseDurationInMonths: Number(formData.courseDurationInMonths),
-      totalFees: formData.totalFees !== undefined ? Number(formData.totalFees) : undefined,
-      feesSubmitted: formData.feesSubmitted !== undefined ? Number(formData.feesSubmitted) : undefined,
-      // Graduation date might be an empty string from form, convert to null
-      graduationDate: formData.graduationDate === "" ? null : formData.graduationDate,
-    };
-
-    const studentId = await addStudentToFirestore(parsedData);
+    // StudentFormValues from Zod already coerces numbers, so direct pass-through should be mostly fine.
+    // The firebase service can also do final type checks/conversions if necessary.
+    const studentId = await addStudentToFirestore(formData);
     return { success: true, message: "Student added successfully!", studentId };
   } catch (error: any) {
     console.error("Error in addStudentAction:", error);
