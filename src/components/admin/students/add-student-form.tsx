@@ -29,15 +29,16 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon, PlusCircle, Trash2, User, Phone, MapPin, GraduationCap, DollarSign, FileText, Save, Loader2 } from "lucide-react";
+import { CalendarIcon, PlusCircle, Trash2, User, Phone, MapPin, GraduationCap, DollarSign, FileText, Save, Loader2, Edit, Briefcase } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { format, isValid, parseISO } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { studentFormSchema, type StudentFormValues } from "@/lib/schemas/student-schema";
-import { addStudentAction } from "@/app/actions/student-actions";
-import { courseOptions } from "@/lib/data"; 
+import { addStudentAction, updateStudentAction } from "@/app/actions/student-actions";
+import { courseOptions } from "@/lib/data";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import type { Student } from "@/lib/types";
 
 const genderOptions = [
   { label: "Male", value: "male" },
@@ -74,21 +75,35 @@ const programTypeOptions = [
   { label: "Degree", value: "Degree" },
 ] as const;
 
+interface AddStudentFormProps {
+  initialData?: StudentFormValues | Student | null; // Student type for data from Firestore
+  studentId?: string;
+}
 
-export function AddStudentForm() {
+export function AddStudentForm({ initialData, studentId }: AddStudentFormProps) {
   const { toast } = useToast();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const mode = studentId && initialData ? 'edit' : 'add';
 
   const form = useForm<StudentFormValues>({
     resolver: zodResolver(studentFormSchema),
-    defaultValues: {
+    defaultValues: mode === 'edit' && initialData ? {
+      ...initialData,
+      dateOfBirth: initialData.dateOfBirth && isValid(parseISO(initialData.dateOfBirth)) ? initialData.dateOfBirth : undefined,
+      admissionDate: initialData.admissionDate && isValid(parseISO(initialData.admissionDate)) ? initialData.admissionDate : "", // required
+      graduationDate: initialData.graduationDate && isValid(parseISO(initialData.graduationDate)) ? initialData.graduationDate : undefined,
+      totalFees: initialData.totalFees ?? undefined,
+      feesSubmitted: initialData.feesSubmitted ?? undefined,
+      courseDurationInMonths: initialData.courseDurationInMonths ?? undefined,
+      semesterLinks: initialData.semesterLinks || [{ semester: "", link: "" }],
+    } : {
       enrollmentNumber: "",
       firstName: "",
       lastName: "",
       fatherName: "",
       motherName: "",
-      dateOfBirth: "",
+      dateOfBirth: undefined,
       gender: undefined,
       bloodGroup: undefined,
       category: undefined,
@@ -119,6 +134,23 @@ export function AddStudentForm() {
     },
   });
 
+  useEffect(() => {
+    if (mode === 'edit' && initialData) {
+       const transformedInitialData = {
+        ...initialData,
+        dateOfBirth: initialData.dateOfBirth && isValid(parseISO(initialData.dateOfBirth)) ? initialData.dateOfBirth : undefined,
+        admissionDate: initialData.admissionDate && isValid(parseISO(initialData.admissionDate)) ? initialData.admissionDate : "",
+        graduationDate: initialData.graduationDate && isValid(parseISO(initialData.graduationDate)) ? initialData.graduationDate : undefined,
+        totalFees: initialData.totalFees ?? undefined,
+        feesSubmitted: initialData.feesSubmitted ?? undefined,
+        courseDurationInMonths: initialData.courseDurationInMonths ?? undefined,
+        semesterLinks: initialData.semesterLinks && initialData.semesterLinks.length > 0 ? initialData.semesterLinks : [{ semester: "", link: "" }],
+      };
+      form.reset(transformedInitialData as StudentFormValues);
+    }
+  }, [initialData, mode, form]);
+
+
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "semesterLinks",
@@ -129,18 +161,26 @@ export function AddStudentForm() {
   async function onSubmit(values: StudentFormValues) {
     setIsSubmitting(true);
     try {
-      const result = await addStudentAction(values);
+      let result;
+      if (mode === 'edit' && studentId) {
+        result = await updateStudentAction(studentId, values);
+      } else {
+        result = await addStudentAction(values);
+      }
 
       if (result.success) {
         toast({
           title: "Success!",
-          description: "Student added successfully.",
+          description: mode === 'edit' ? "Student updated successfully." : "Student added successfully.",
         });
-        form.reset();
-        // router.push("/admin/students/manage"); 
+        if (mode === 'add') {
+            form.reset(); // Reset form only in add mode
+        }
+        router.push("/admin/students/manage");
+        router.refresh(); // To refetch data on the manage page
       } else {
         toast({
-          title: "Error Adding Student",
+          title: mode === 'edit' ? "Error Updating Student" : "Error Adding Student",
           description: result.message || "An unexpected error occurred.",
           variant: "destructive",
         });
@@ -193,14 +233,14 @@ export function AddStudentForm() {
             <FormField control={form.control} name="fatherName" render={({ field }) => (
               <FormItem>
                 <FormLabel>Father's Name</FormLabel>
-                <FormControl><Input placeholder="Enter father's name" {...field} /></FormControl>
+                <FormControl><Input placeholder="Enter father's name" {...field} value={field.value ?? ""} /></FormControl>
                 <FormMessage />
               </FormItem>
             )} />
             <FormField control={form.control} name="motherName" render={({ field }) => (
               <FormItem>
                 <FormLabel>Mother's Name</FormLabel>
-                <FormControl><Input placeholder="Enter mother's name" {...field} /></FormControl>
+                <FormControl><Input placeholder="Enter mother's name" {...field} value={field.value ?? ""} /></FormControl>
                 <FormMessage />
               </FormItem>
             )} />
@@ -211,13 +251,13 @@ export function AddStudentForm() {
                   <PopoverTrigger asChild>
                     <FormControl>
                       <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                        {field.value ? format(new Date(field.value), "PPP") : <span>Pick a date</span>}
+                        {field.value && isValid(parseISO(field.value)) ? format(parseISO(field.value), "PPP") : <span>Pick a date</span>}
                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                       </Button>
                     </FormControl>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")} captionLayout="dropdown-buttons" fromYear={1950} toYear={new Date().getFullYear()}/>
+                    <Calendar mode="single" selected={field.value && isValid(parseISO(field.value)) ? parseISO(field.value) : undefined} onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")} captionLayout="dropdown-buttons" fromYear={1950} toYear={new Date().getFullYear()}/>
                   </PopoverContent>
                 </Popover>
                 <FormMessage />
@@ -226,7 +266,7 @@ export function AddStudentForm() {
             <FormField control={form.control} name="gender" render={({ field }) => (
               <FormItem>
                 <FormLabel>Gender</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
                   <FormControl><SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger></FormControl>
                   <SelectContent>{genderOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent>
                 </Select>
@@ -236,7 +276,7 @@ export function AddStudentForm() {
             <FormField control={form.control} name="bloodGroup" render={({ field }) => (
               <FormItem>
                 <FormLabel>Blood Group</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
                   <FormControl><SelectTrigger><SelectValue placeholder="Select blood group" /></SelectTrigger></FormControl>
                   <SelectContent>{bloodGroupOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent>
                 </Select>
@@ -246,7 +286,7 @@ export function AddStudentForm() {
             <FormField control={form.control} name="category" render={({ field }) => (
               <FormItem>
                 <FormLabel>Category</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
                   <FormControl><SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger></FormControl>
                   <SelectContent>{categoryOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent>
                 </Select>
@@ -275,28 +315,28 @@ export function AddStudentForm() {
             <FormField control={form.control} name="alternatePhone" render={({ field }) => (
               <FormItem>
                 <FormLabel>Alternate Phone</FormLabel>
-                <FormControl><Input placeholder="Alternate phone number" {...field} /></FormControl>
+                <FormControl><Input placeholder="Alternate phone number" {...field} value={field.value ?? ""} /></FormControl>
                 <FormMessage />
               </FormItem>
             )} />
             <FormField control={form.control} name="email" render={({ field }) => (
               <FormItem>
                 <FormLabel>Email</FormLabel>
-                <FormControl><Input type="email" placeholder="student@example.com" {...field} /></FormControl>
+                <FormControl><Input type="email" placeholder="student@example.com" {...field} value={field.value ?? ""} /></FormControl>
                 <FormMessage />
               </FormItem>
             )} />
             <FormField control={form.control} name="emergencyContact" render={({ field }) => (
               <FormItem>
                 <FormLabel>Emergency Contact</FormLabel>
-                <FormControl><Input placeholder="Emergency contact number" {...field} /></FormControl>
+                <FormControl><Input placeholder="Emergency contact number" {...field} value={field.value ?? ""} /></FormControl>
                 <FormMessage />
               </FormItem>
             )} />
             <FormField control={form.control} name="aadharNumber" render={({ field }) => (
               <FormItem>
                 <FormLabel>Aadhar Number</FormLabel>
-                <FormControl><Input placeholder="12-digit Aadhar number" {...field} /></FormControl>
+                <FormControl><Input placeholder="12-digit Aadhar number" {...field} value={field.value ?? ""} /></FormControl>
                 <FormMessage />
               </FormItem>
             )} />
@@ -315,28 +355,28 @@ export function AddStudentForm() {
                 <FormField control={form.control} name="address" render={({ field }) => (
                     <FormItem className="md:col-span-2 lg:col-span-3">
                         <FormLabel>Address</FormLabel>
-                        <FormControl><Textarea placeholder="Complete address" rows={2} {...field} /></FormControl>
+                        <FormControl><Textarea placeholder="Complete address" rows={2} {...field} value={field.value ?? ""} /></FormControl>
                         <FormMessage />
                     </FormItem>
                 )} />
                 <FormField control={form.control} name="city" render={({ field }) => (
                     <FormItem>
                         <FormLabel>City</FormLabel>
-                        <FormControl><Input placeholder="City" {...field} /></FormControl>
+                        <FormControl><Input placeholder="City" {...field} value={field.value ?? ""} /></FormControl>
                         <FormMessage />
                     </FormItem>
                 )} />
                 <FormField control={form.control} name="state" render={({ field }) => (
                     <FormItem>
                         <FormLabel>State</FormLabel>
-                        <FormControl><Input placeholder="State" {...field} /></FormControl>
+                        <FormControl><Input placeholder="State" {...field} value={field.value ?? ""} /></FormControl>
                         <FormMessage />
                     </FormItem>
                 )} />
                 <FormField control={form.control} name="pincode" render={({ field }) => (
                     <FormItem>
                         <FormLabel>Pincode</FormLabel>
-                        <FormControl><Input placeholder="6-digit pincode" {...field} /></FormControl>
+                        <FormControl><Input placeholder="6-digit pincode" {...field} value={field.value ?? ""} /></FormControl>
                         <FormMessage />
                     </FormItem>
                 )} />
@@ -355,7 +395,7 @@ export function AddStudentForm() {
                 <FormField control={form.control} name="course" render={({ field }) => (
                     <FormItem>
                         <FormLabel>Course *</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
                             <FormControl><SelectTrigger><SelectValue placeholder="Select course" /></SelectTrigger></FormControl>
                             <SelectContent>{courseOptions.filter(c => c.value !== "All").map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent>
                         </Select>
@@ -365,7 +405,7 @@ export function AddStudentForm() {
                  <FormField control={form.control} name="programType" render={({ field }) => (
                     <FormItem>
                         <FormLabel>Program Type *</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
                         <FormControl><SelectTrigger><SelectValue placeholder="Select program type" /></SelectTrigger></FormControl>
                         <SelectContent>{programTypeOptions.map(type => <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>)}</SelectContent>
                         </Select>
@@ -386,13 +426,13 @@ export function AddStudentForm() {
                             <PopoverTrigger asChild>
                                 <FormControl>
                                 <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                                    {field.value ? format(new Date(field.value), "PPP") : <span>Pick a date</span>}
+                                    {field.value && isValid(parseISO(field.value)) ? format(parseISO(field.value), "PPP") : <span>Pick a date</span>}
                                     <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                 </Button>
                                 </FormControl>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")} initialFocus />
+                                <Calendar mode="single" selected={field.value && isValid(parseISO(field.value)) ? parseISO(field.value) : undefined} onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")} initialFocus />
                             </PopoverContent>
                         </Popover>
                         <FormMessage />
@@ -412,13 +452,13 @@ export function AddStudentForm() {
                             <PopoverTrigger asChild>
                             <FormControl>
                                 <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                                {field.value ? format(new Date(field.value), "PPP") : <span>Pick a date (if graduated)</span>}
+                                {field.value && isValid(parseISO(field.value)) ? format(parseISO(field.value), "PPP") : <span>Pick a date (if graduated)</span>}
                                 <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                 </Button>
                             </FormControl>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")} initialFocus/>
+                            <Calendar mode="single" selected={field.value && isValid(parseISO(field.value)) ? parseISO(field.value) : undefined} onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")} initialFocus/>
                             </PopoverContent>
                         </Popover>
                         <FormMessage />
@@ -439,14 +479,14 @@ export function AddStudentForm() {
                 <FormField control={form.control} name="totalFees" render={({ field }) => (
                     <FormItem>
                         <FormLabel>Total Fees (₹)</FormLabel>
-                        <FormControl><Input type="number" placeholder="Total course fees" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || undefined)}/></FormControl>
+                        <FormControl><Input type="number" placeholder="Total course fees" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || undefined)} value={field.value ?? ""} /></FormControl>
                         <FormMessage />
                     </FormItem>
                 )} />
                 <FormField control={form.control} name="feesSubmitted" render={({ field }) => (
                     <FormItem>
                         <FormLabel>Fees Submitted (₹)</FormLabel>
-                        <FormControl><Input type="number" placeholder="Amount paid" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || undefined)}/></FormControl>
+                        <FormControl><Input type="number" placeholder="Amount paid" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || undefined)} value={field.value ?? ""} /></FormControl>
                         <FormMessage />
                     </FormItem>
                 )} />
@@ -456,12 +496,12 @@ export function AddStudentForm() {
         {/* Document Links (Conditional) */}
         {selectedProgramType === "Certificate" && (
           <Card>
-            <CardHeader><CardTitle className="flex items-center gap-2 text-xl"><FileText className="w-5 h-5 text-primary" />Program Certificate</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="flex items-center gap-2 text-xl"><Briefcase className="w-5 h-5 text-primary" />Program Certificate</CardTitle></CardHeader>
             <CardContent>
               <FormField control={form.control} name="programCertificateLink" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Program Certificate GDrive Link</FormLabel>
-                  <FormControl><Input placeholder="Enter GDrive link for the certificate" {...field} /></FormControl>
+                  <FormControl><Input placeholder="Enter GDrive link for the certificate" {...field} value={field.value ?? ""} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
@@ -471,12 +511,12 @@ export function AddStudentForm() {
 
         {selectedProgramType === "Degree" && (
           <Card>
-            <CardHeader><CardTitle className="flex items-center gap-2 text-xl"><FileText className="w-5 h-5 text-primary" />Degree Documents</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="flex items-center gap-2 text-xl"><Briefcase className="w-5 h-5 text-primary" />Degree Documents</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <FormField control={form.control} name="degreeCertificateLink" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Final Degree Certificate GDrive Link (Optional)</FormLabel>
-                  <FormControl><Input placeholder="Enter GDrive link for the final degree" {...field} /></FormControl>
+                  <FormControl><Input placeholder="Enter GDrive link for the final degree" {...field} value={field.value ?? ""} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
@@ -523,7 +563,7 @@ export function AddStudentForm() {
                 <FormField control={form.control} name="remarks" render={({ field }) => (
                     <FormItem>
                         <FormLabel>Remarks</FormLabel>
-                        <FormControl><Textarea placeholder="Additional notes or comments" rows={2} {...field} /></FormControl>
+                        <FormControl><Textarea placeholder="Additional notes or comments" rows={2} {...field} value={field.value ?? ""} /></FormControl>
                         <FormMessage />
                     </FormItem>
                 )} />
@@ -531,7 +571,7 @@ export function AddStudentForm() {
                     <FormField control={form.control} name="status" render={({ field }) => (
                         <FormItem>
                             <FormLabel>Student Status *</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
                                 <FormControl><SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger></FormControl>
                                 <SelectContent>{studentStatusOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent>
                             </Select>
@@ -541,7 +581,7 @@ export function AddStudentForm() {
                     <FormField control={form.control} name="certificateStatus" render={({ field }) => (
                         <FormItem>
                             <FormLabel>Certificate Status *</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
                                 <FormControl><SelectTrigger><SelectValue placeholder="Select certificate status" /></SelectTrigger></FormControl>
                                 <SelectContent>{certificateStatusOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent>
                             </Select>
@@ -552,7 +592,7 @@ export function AddStudentForm() {
                  <FormField control={form.control} name="profilePictureUrl" render={({ field }) => (
                     <FormItem>
                         <FormLabel>Profile Picture URL (Optional)</FormLabel>
-                        <FormControl><Input placeholder="https://example.com/image.png" {...field} /></FormControl>
+                        <FormControl><Input placeholder="https://example.com/image.png" {...field} value={field.value ?? ""} /></FormControl>
                         <FormDescription>Link to student's photo. File upload can be added later.</FormDescription>
                         <FormMessage />
                     </FormItem>
@@ -567,9 +607,9 @@ export function AddStudentForm() {
             </Button>
             <Button type="submit" disabled={isSubmitting} className="bg-primary hover:bg-primary/90">
               {isSubmitting ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Adding Student...</>
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {mode === 'edit' ? 'Updating...' : 'Adding...'}</>
               ) : (
-                <><Save className="w-4 h-4 mr-2" /> Add Student</>
+                <>{mode === 'edit' ? <Edit className="w-4 h-4 mr-2" /> : <Save className="w-4 h-4 mr-2" />} {mode === 'edit' ? 'Update Student' : 'Add Student'}</>
               )}
             </Button>
         </div>

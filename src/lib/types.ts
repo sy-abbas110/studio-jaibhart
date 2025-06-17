@@ -33,6 +33,7 @@ export interface Student {
   batch: string; // e.g., 2024-2025 or 2024 (renamed from batchYear)
   admissionDate: string; // YYYY-MM-DD (renamed from enrollmentDate)
   courseDurationInMonths: number; // Kept from previous schema
+  graduationDate?: string | null; // YYYY-MM-DD or null
 
   // Fee Information
   totalFees?: number;
@@ -46,18 +47,18 @@ export interface Student {
   profilePictureUrl?: string; // URL to student's photo in Firebase Storage
 
   // Links to documents, specific to programType
-  programCertificateLink?: string; 
-  degreeCertificateLink?: string; 
+  programCertificateLink?: string;
+  degreeCertificateLink?: string;
   semesterLinks?: Array<{
-    semester: string; 
-    link: string; 
-    storagePath?: string; 
-    fileName?: string; 
+    semester: string;
+    link: string;
+    storagePath?: string;
+    fileName?: string;
   }>;
 
   // Firestore timestamps
-  createdAt?: Timestamp | Date | string;
-  updatedAt?: Timestamp | Date | string;
+  createdAt?: Timestamp | Date | string; // Allow string for form submission, convert to Timestamp in service
+  updatedAt?: Timestamp | Date | string; // Allow string for form submission, convert to Timestamp in service
 }
 
 export interface Certificate { // This represents individual certificate/marksheet records
@@ -67,7 +68,6 @@ export interface Certificate { // This represents individual certificate/markshe
   enrollmentNumber: string; // Denormalized
 
   course: string; // Course this certificate is related to
-  // programType: 'Degree' | 'Certificate' | 'Diploma'; // from mockCertificates, align with Student's programType or make more generic
   programType: string; // Generalizing for now based on mockCertificates
 
   documentLink: string; // GDrive link or Firebase Storage URL
@@ -82,6 +82,42 @@ export interface Certificate { // This represents individual certificate/markshe
 }
 
 // For forms, especially with react-hook-form and Zod
-export type StudentFormData = Omit<Student, 'id' | 'createdAt' | 'updatedAt'>;
-export type CertificateFormData = Omit<Certificate, 'id' | 'createdAt' | 'updatedAt' | 'studentName' | 'enrollmentNumber'> & { studentId: string };
+// StudentFormData should now fully match StudentFormValues from Zod schema for consistency
+export type StudentFormData = Omit<Student, 'id' | 'createdAt' | 'updatedAt'> & {
+  // Explicitly define all fields that are in the Zod schema
+  enrollmentNumber: string;
+  firstName: string;
+  lastName: string;
+  fatherName?: string;
+  motherName?: string;
+  dateOfBirth?: string;
+  gender?: 'male' | 'female' | 'other';
+  bloodGroup?: 'A+' | 'A-' | 'B+' | 'B-' | 'AB+' | 'AB-' | 'O+' | 'O-';
+  category?: 'general' | 'obc' | 'sc' | 'st' | 'ews';
+  phone: string;
+  alternatePhone?: string;
+  email?: string;
+  emergencyContact?: string;
+  aadharNumber?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  course: string;
+  programType: 'Degree' | 'Certificate';
+  batch: string;
+  admissionDate: string;
+  courseDurationInMonths: number;
+  totalFees?: number;
+  feesSubmitted?: number;
+  remarks?: string;
+  status: 'Active' | 'Completed' | 'Inactive';
+  certificateStatus: 'Pending' | 'Issued';
+  profilePictureUrl?: string;
+  programCertificateLink?: string;
+  degreeCertificateLink?: string;
+  semesterLinks?: Array<{ semester: string; link: string }>;
+  graduationDate?: string | null;
+};
 
+export type CertificateFormData = Omit<Certificate, 'id' | 'createdAt' | 'updatedAt' | 'studentName' | 'enrollmentNumber'> & { studentId: string };
