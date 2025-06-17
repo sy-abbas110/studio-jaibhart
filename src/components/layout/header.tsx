@@ -1,13 +1,15 @@
+
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, BookUser, Award, HomeIcon } from 'lucide-react'; // Added HomeIcon
+import { Menu, BookUser, Award, HomeIcon, ShieldCheck } from 'lucide-react'; // Added HomeIcon, ShieldCheck
 
 export function Header() {
   const navItems = [
     { href: '/', label: 'Home', icon: <HomeIcon className="h-5 w-5" /> },
     { href: '/students', label: 'Students', icon: <BookUser className="h-5 w-5" /> },
     { href: '/certificates', label: 'Certificates', icon: <Award className="h-5 w-5" /> },
+    { href: '/admin/login', label: 'Admin', icon: <ShieldCheck className="h-5 w-5" /> }, // Added Admin link
   ];
 
   return (

@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase/config";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,25 +12,37 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (password !== confirmPassword) {
+      toast({
+        title: "Registration Failed",
+        description: "Passwords do not match.",
+        variant: "destructive",
+      });
+      return;
+    }
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      toast({ title: "Login Successful", description: "Redirecting to dashboard..." });
-      router.push("/admin/dashboard");
-    } catch (error: any) {
-      console.error("Login error:", error);
+      await createUserWithEmailAndPassword(auth, email, password);
       toast({
-        title: "Login Failed",
-        description: error.message || "Please check your credentials and try again.",
+        title: "Registration Successful",
+        description: "Please login to continue.",
+      });
+      router.push("/admin/login");
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      toast({
+        title: "Registration Failed",
+        description: error.message || "Could not create account. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -47,11 +59,11 @@ export default function LoginPage() {
                 <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
               </svg>
           </Link>
-          <CardTitle className="text-2xl font-headline text-primary">Admin Login</CardTitle>
-          <CardDescription>Access the Jai Bharat Institute Dashboard</CardDescription>
+          <CardTitle className="text-2xl font-headline text-primary">Admin Registration</CardTitle>
+          <CardDescription>Create a new administrator account</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin} className="space-y-6">
+          <form onSubmit={handleRegister} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -76,16 +88,28 @@ export default function LoginPage() {
                 className="bg-input"
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password">Confirm Password</Label>
+              <Input
+                id="confirm-password"
+                type="password"
+                placeholder="********"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                className="bg-input"
+              />
+            </div>
             <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={loading}>
-              {loading ? "Logging in..." : "Login"}
+              {loading ? "Registering..." : "Register"}
             </Button>
           </form>
         </CardContent>
         <CardFooter className="flex flex-col items-center justify-center text-sm">
           <p className="text-muted-foreground">
-            Don&apos;t have an account?{" "}
-            <Link href="/admin/register" className="font-medium text-primary hover:underline">
-              Register here
+            Already have an account?{" "}
+            <Link href="/admin/login" className="font-medium text-primary hover:underline">
+              Login here
             </Link>
           </p>
         </CardFooter>
