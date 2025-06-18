@@ -3,7 +3,7 @@
 
 import { determineStudentStatus, type DetermineStudentStatusInput } from "@/ai/flows/determine-student-status";
 import { 
-  addStudent as addStudentToFirestore,
+  addStudent, // Corrected: was addStudentToFirestore in some contexts, ensure it matches service export
   getStudents as getStudentsFromFirestore,
   getStudentById as getStudentByIdFromFirestore,
   updateStudent as updateStudentInFirestore,
@@ -24,10 +24,14 @@ export async function getStudentStatusAction(input: DetermineStudentStatusInput)
 
 export async function addStudentAction(formData: StudentFormValues): Promise<{ success: boolean; message: string; studentId?: string }> {
   try {
-    const studentId = await addStudentToFirestore(formData);
+    const studentId = await addStudent(formData); // Ensure this calls the correct exported function from student-services
     return { success: true, message: "Student added successfully!", studentId };
   } catch (error: any) {
-    console.error("Error in addStudentAction:", error);
+    console.error("Error in addStudentAction:", error); // Default log
+    // More detailed logging for Firebase permission errors or other specific errors
+    if (error.code) { // Firebase errors often have a 'code' property
+      console.error(`Firebase Error Code: ${error.code}, Message: ${error.message}`);
+    }
     return { success: false, message: error.message || "Failed to add student. Please try again." };
   }
 }
@@ -74,3 +78,4 @@ export async function deleteStudentAction(id: string): Promise<{ success: boolea
     return { success: false, message: error.message || "Failed to delete student. Please try again." };
   }
 }
+
