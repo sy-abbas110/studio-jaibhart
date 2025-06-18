@@ -4,7 +4,7 @@ import type { Timestamp } from "firebase/firestore";
 export interface Student {
   id: string; // Firestore document ID
   // Basic Information
-  enrollmentNumber: string; // Should be unique
+  enrollmentNumber: string; 
   firstName: string;
   lastName: string;
   fatherName?: string;
@@ -28,11 +28,11 @@ export interface Student {
   pincode?: string; // 6 digits
 
   // Academic Information
-  course: string; // e.g., D.Pharm, B.Ed
-  programType: 'Degree' | 'Certificate'; // Type of program student enrolled in
-  batch: string; // e.g., 2024-2025 or 2024 (renamed from batchYear)
-  admissionDate: string; // YYYY-MM-DD (renamed from enrollmentDate)
-  courseDurationInMonths: number; // Kept from previous schema
+  course: string; // e.g., D.Pharm, B.Ed - Will use new comprehensive list
+  programType: 'Degree' | 'Certificate'; 
+  batch: string; 
+  admissionDate: string; // YYYY-MM-DD
+  courseDurationInMonths: number; 
   graduationDate?: string | null; // YYYY-MM-DD or null
 
   // Fee Information
@@ -41,78 +41,80 @@ export interface Student {
 
   // Additional Information
   remarks?: string;
-  status: 'Active' | 'Completed' | 'Inactive'; // Student's current status
-  certificateStatus: 'Pending' | 'Issued'; // Status of their main certificate/degree
+  status: 'Active' | 'Completed' | 'Inactive'; 
+  certificateStatus: 'Pending' | 'Issued'; 
 
-  profilePictureUrl?: string; // URL to student's photo in Firebase Storage
+  profilePictureUrl?: string; 
 
-  // Links to documents, specific to programType
   programCertificateLink?: string;
   degreeCertificateLink?: string;
   semesterLinks?: Array<{
     semester: string;
     link: string;
-    storagePath?: string; // If using Firebase storage directly for these
-    fileName?: string; // If using Firebase storage directly for these
+    storagePath?: string; 
+    fileName?: string; 
   }>;
 
-  // Firestore timestamps
   createdAt?: Timestamp | Date | string; 
   updatedAt?: Timestamp | Date | string; 
 }
 
-// For public student table (subset of fields)
+// This PublicStudentInfo was used for the old mock data.
+// The student-table.tsx now uses the full Student type (or should aim to)
+// and adapt data if necessary (e.g., combining firstName and lastName).
+// For simplicity, I will remove it as the public student table can adapt the full Student type.
+/*
 export interface PublicStudentInfo {
   id: string;
   serialNumber: number;
   name: string;
   enrollmentNumber: string;
   course: string;
-  batchYear: string; // Or batch
-  enrollmentDate: string; // Or admissionDate
+  batchYear: string; 
+  enrollmentDate: string; 
   courseDurationInMonths: number;
   graduationDate: string | null;
 }
+*/
 
 
 export interface Certificate {
-  id: string; // Firestore document ID
-  studentId: string; // Firestore ID of the student this certificate belongs to
-  studentEnrollmentNumber: string; // Denormalized
-  studentName: string; // Denormalized
-  studentCourse: string; // Denormalized
-  studentProgramType: 'Degree' | 'Certificate'; // Denormalized from student
+  id: string; 
+  studentId: string; 
+  studentEnrollmentNumber: string; 
+  studentName: string; 
+  studentCourse: string; 
+  studentProgramType: 'Degree' | 'Certificate'; 
 
-  certificateNumber: string; // Auto-generated or unique identifier
+  certificateNumber: string; 
   certificateType: 'completion' | 'degree' | 'diploma' | 'marksheet' | 'provisional';
   issueDate: string; // YYYY-MM-DD
   grade?: 'A+' | 'A' | 'B+' | 'B' | 'C+' | 'C' | 'pass';
-  percentage?: number; // e.g., 85.5, stored as number or null
+  percentage?: number | null; // Can be null if not applicable or cleared
 
-  gdriveLink?: string; // Link to the main certificate document
-  marksheetLinks?: Array<{ semester: string; link: string }>; // For degree students, semester-wise marksheets
+  gdriveLink?: string; 
+  marksheetLinks?: Array<{ semester: string; link: string }>; 
 
   remarks?: string;
 
-  // Firestore timestamps
   createdAt?: Timestamp | Date | string;
   updatedAt?: Timestamp | Date | string;
 }
 
-// For public certificate table (subset of fields)
+// This PublicCertificateInfo was used for the old mock data.
+// The certificate-table.tsx now uses the full Certificate type (or should aim to).
+/*
 export interface PublicCertificateInfo {
   id: string;
   studentName: string;
   enrollmentNumber: string;
-  programType: string; // 'Degree', 'Certificate', 'Diploma' etc.
+  programType: string; 
   documentLink: string;
   issuedDate: string; // YYYY-MM-DD
   course: string;
 }
+*/
 
-
-// For forms, especially with react-hook-form and Zod
 export type StudentFormValues = Omit<Student, 'id' | 'createdAt' | 'updatedAt'>;
 export type CertificateFormValues = Omit<Certificate, 'id' | 'createdAt' | 'updatedAt' | 'studentEnrollmentNumber' | 'studentName' | 'studentCourse' | 'studentProgramType'>;
-// The CertificateFormValues type from Zod is more precise for form validation.
-// This general type is fine but Zod infer is preferred where schema is used.
+

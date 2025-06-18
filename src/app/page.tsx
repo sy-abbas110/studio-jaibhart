@@ -1,32 +1,14 @@
+
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CourseCard } from '@/components/landing/course-card';
-import { Award, BookOpen, Computer, FlaskConical, Mail, MessageSquare, Phone, Users, FileText } from 'lucide-react';
+// import { CourseCard } from '@/components/landing/course-card'; // Old component
+import { AllCoursesSection } from '@/components/landing/all-courses-section'; // New component
+import { Mail, MessageSquare, Phone, Users, FileText } from 'lucide-react';
 
-const courses = [
-  {
-    title: 'D.Pharm',
-    description: 'Diploma in Pharmacy program focusing on pharmaceutical sciences and patient care.',
-    Icon: FlaskConical,
-  },
-  {
-    title: 'CCC',
-    description: 'Course on Computer Concepts, providing foundational knowledge in IT and computer applications.',
-    Icon: Computer,
-  },
-  {
-    title: 'B.Ed',
-    description: 'Bachelor of Education degree program for aspiring teachers and educational professionals.',
-    Icon: BookOpen,
-  },
-  {
-    title: 'Lab Technician',
-    description: 'Training for medical laboratory technicians, covering diagnostics and lab procedures.',
-    Icon: Award, // Placeholder, consider specific icon
-  },
-];
+// The old 'courses' array and CourseCard component are no longer needed here
+// as AllCoursesSection will handle the display of the comprehensive list.
 
 export default function HomePage() {
   return (
@@ -77,19 +59,8 @@ export default function HomePage() {
         </div>
       </section>
       
-      {/* Courses Section */}
-      <section className="py-16 bg-secondary/30">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-headline font-semibold text-primary text-center mb-12">
-            Our Flagship Courses
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {courses.map((course) => (
-              <CourseCard key={course.title} title={course.title} description={course.description} Icon={course.Icon} />
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* New Courses Section */}
+      <AllCoursesSection />
 
       {/* Contact Section */}
       <section className="py-16 bg-background">

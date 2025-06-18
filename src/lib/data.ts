@@ -1,303 +1,225 @@
+
 import type { Student, Certificate } from './types';
+
+export const courseCategories = [
+  {
+    title: "Paramedical Courses",
+    color: "bg-red-100 text-red-800", // Kept for specific visual identity from user's design
+    courses: [
+      "D.PHARMA (Ayurved & Homeopath)",
+      "G.N.M. (Ayurved)",
+      "C.C.H. (Ayurved Community Health)",
+      "D.M.L.T. (Diagnostic)",
+      "C.M.S & E.D.",
+      "G.N.O.",
+      "O.T. Technician",
+      "Vaithery (एवं चिकित्सक)",
+      "B.PHARMA & D.PHARMA (Allopath)",
+    ],
+  },
+  {
+    title: "Medical Courses",
+    color: "bg-green-100 text-green-800",
+    courses: ["B.A.M.S.", "B.N.Y.S.", "D.N.Y.S.", "M.S.W.", "M.A.H.W."],
+  },
+  {
+    title: "Technical Courses",
+    color: "bg-blue-100 text-blue-700", // Adjusted for better contrast if needed
+    courses: [
+      "I.T.I. - Fitter, Welder, Mechanical, Electrician",
+      "Material Management",
+      "POLYTECHNIC (Civil Engineering All Courses)",
+      "N.T.T.",
+      "T.O.T.",
+      "A.D.F.A.",
+    ],
+  },
+  {
+    title: "Computer Courses",
+    color: "bg-purple-100 text-purple-800",
+    courses: ["CCC", "PGDCA", "O-LEVEL", "DCA", "ADCA", "BCA", "MCA"],
+  },
+  {
+    title: "Degree Programs",
+    color: "bg-yellow-100 text-yellow-800",
+    courses: [
+      "B.A.",
+      "B.Sc.",
+      "B.Com.",
+      "M.Com.",
+      "M.A.",
+      "L.L.B.",
+      "L.L.M.",
+      "BBA",
+      "MBA",
+      "B.T.C.",
+      "B.Ed.",
+      "D.Ed.",
+      "B.P.Ed.",
+      "M.P.Ed.",
+      "B.Tech",
+      "M.Tech",
+    ],
+  },
+  {
+    title: "Yoga & Wellness",
+    color: "bg-orange-100 text-orange-800",
+    courses: [
+      "YOGA D.N.Y.S.",
+      "YOGA B.N.Y.S.",
+      "YOGA P.G. Diploma",
+      "YOGA B.Sc.",
+      "YOGA M.Sc.",
+      "M.A. YOGA",
+      "B.A. YOGA",
+      "Yoga Teacher Training Certificate",
+    ],
+  },
+];
+
+const getAllCourses = () => {
+  const courses: string[] = [];
+  courseCategories.forEach(category => {
+    category.courses.forEach(course => {
+      if (!courses.includes(course)) {
+        courses.push(course);
+      }
+    });
+  });
+  return courses.sort();
+};
+
+export const allCourseOptions: { value: string; label: string }[] = [
+  { value: "All", label: "All Courses" }, // For filter dropdowns
+  ...getAllCourses().map(course => ({ value: course, label: course }))
+];
+
+export const studentFormCourseOptions: { value: string; label: string }[] = 
+  getAllCourses().map(course => ({ value: course, label: course }));
+
 
 export const mockStudents: Student[] = [
   {
     id: '1',
-    serialNumber: 1,
-    name: 'Aarav Sharma',
+    // serialNumber: 1, // serialNumber removed from Student type, not in StudentFormValues
+    firstName: 'Aarav',
+    lastName: 'Sharma',
     enrollmentNumber: 'JBPI2021001',
-    course: 'D.Pharm',
-    batchYear: '2021-2023',
-    enrollmentDate: '2021-08-15',
+    course: 'D.PHARMA (Ayurved & Homeopath)',
+    batch: '2021-2023',
+    admissionDate: '2021-08-15',
     courseDurationInMonths: 24,
     graduationDate: '2023-07-20',
+    status: 'Completed',
+    certificateStatus: 'Issued',
+    programType: 'Certificate', // Assuming D.Pharma is a Certificate/Diploma
+    phone: '9876543210'
   },
   {
     id: '2',
-    serialNumber: 2,
-    name: 'Diya Patel',
+    firstName: 'Diya',
+    lastName: 'Patel',
     enrollmentNumber: 'JBPI2022002',
     course: 'CCC',
-    batchYear: '2022',
-    enrollmentDate: '2022-01-10',
+    batch: '2022',
+    admissionDate: '2022-01-10',
     courseDurationInMonths: 3,
     graduationDate: '2022-04-05',
+    status: 'Completed',
+    certificateStatus: 'Issued',
+    programType: 'Certificate',
+    phone: '9876543211'
   },
   {
     id: '3',
-    serialNumber: 3,
-    name: 'Rohan Mehta',
+    firstName: 'Rohan',
+    lastName: 'Mehta',
     enrollmentNumber: 'JBPI2020003',
-    course: 'B.Ed',
-    batchYear: '2020-2022',
-    enrollmentDate: '2020-07-01',
+    course: 'B.Ed.',
+    batch: '2020-2022',
+    admissionDate: '2020-07-01',
     courseDurationInMonths: 24,
     graduationDate: '2022-06-15',
+    status: 'Completed',
+    certificateStatus: 'Issued',
+    programType: 'Degree',
+    phone: '9876543212'
   },
   {
     id: '4',
-    serialNumber: 4,
-    name: 'Priya Singh',
+    firstName: 'Priya',
+    lastName: 'Singh',
     enrollmentNumber: 'JBPI2023004',
-    course: 'D.Pharm',
-    batchYear: '2023-2025',
-    enrollmentDate: '2023-09-01',
+    course: 'D.PHARMA (Ayurved & Homeopath)',
+    batch: '2023-2025',
+    admissionDate: '2023-09-01',
     courseDurationInMonths: 24,
     graduationDate: null, // Ongoing
+    status: 'Active',
+    certificateStatus: 'Pending',
+    programType: 'Certificate',
+    phone: '9876543213'
   },
   {
     id: '5',
-    serialNumber: 5,
-    name: 'Amit Kumar',
+    firstName: 'Amit',
+    lastName: 'Kumar',
     enrollmentNumber: 'JBPI2022005',
-    course: 'Lab Technician',
-    batchYear: '2022-2024',
-    enrollmentDate: '2022-07-20',
+    course: 'D.M.L.T. (Diagnostic)',
+    batch: '2022-2024',
+    admissionDate: '2022-07-20',
     courseDurationInMonths: 24,
     graduationDate: '2024-06-30',
+    status: 'Completed',
+    certificateStatus: 'Issued',
+    programType: 'Certificate', // Assuming DMLT is cert/diploma
+    phone: '9876543214'
   },
-  {
-    id: '6',
-    serialNumber: 6,
-    name: 'Sneha Reddy',
-    enrollmentNumber: 'JBPI2023006',
-    course: 'CCC',
-    batchYear: '2023',
-    enrollmentDate: '2023-03-15',
-    courseDurationInMonths: 3,
-    graduationDate: '2023-06-10',
-  },
-  {
-    id: '7',
-    serialNumber: 7,
-    name: 'Vikram Yadav',
-    enrollmentNumber: 'JBPI2021007',
-    course: 'B.Ed',
-    batchYear: '2021-2023',
-    enrollmentDate: '2021-07-05',
-    courseDurationInMonths: 24,
-    graduationDate: '2023-06-20',
-  },
-  {
-    id: '8',
-    serialNumber: 8,
-    name: 'Anjali Gupta',
-    enrollmentNumber: 'JBPI2024008',
-    course: 'D.Pharm',
-    batchYear: '2024-2026',
-    enrollmentDate: '2024-01-20',
-    courseDurationInMonths: 24,
-    graduationDate: null, // Ongoing
-  },
-  {
-    id: '9',
-    serialNumber: 9,
-    name: 'Rajesh Nair',
-    enrollmentNumber: 'JBPI2022009',
-    course: 'OT Technician',
-    batchYear: '2022-2023',
-    enrollmentDate: '2022-08-01',
-    courseDurationInMonths: 12,
-    graduationDate: '2023-07-15',
-  },
-  {
-    id: '10',
-    serialNumber: 10,
-    name: 'Kavita Joshi',
-    enrollmentNumber: 'JBPI2023010',
-    course: 'CCC',
-    batchYear: '2023',
-    enrollmentDate: '2023-10-01',
-    courseDurationInMonths: 3,
-    graduationDate: '2023-12-28',
-  },
-  {
-    id: '11',
-    serialNumber: 11,
-    name: 'Manish Chouhan',
-    enrollmentNumber: 'JBPI2020011',
-    course: 'B.Ed',
-    batchYear: '2020-2022',
-    enrollmentDate: '2020-07-15',
-    courseDurationInMonths: 24,
-    graduationDate: '2022-06-25',
-  },
-  {
-    id: '12',
-    serialNumber: 12,
-    name: 'Sunita Devi',
-    enrollmentNumber: 'JBPI2023012',
-    course: 'D.Pharm',
-    batchYear: '2023-2025',
-    enrollmentDate: '2023-08-10',
-    courseDurationInMonths: 24,
-    graduationDate: null, // Ongoing
-  },
-   {
-    id: '13',
-    serialNumber: 13,
-    name: 'Arjun Singh',
-    enrollmentNumber: 'JBPI2022013',
-    course: 'D.Pharm',
-    batchYear: '2022-2024',
-    enrollmentDate: '2022-09-01',
-    courseDurationInMonths: 24,
-    graduationDate: '2024-08-15', // Future graduation considered ongoing by AI depending on current date
-  },
-  {
-    id: '14',
-    serialNumber: 14,
-    name: 'Mira Desai',
-    enrollmentNumber: 'JBPI2023014',
-    course: 'CCC',
-    batchYear: '2023',
-    enrollmentDate: '2023-05-01',
-    courseDurationInMonths: 3,
-    graduationDate: '2023-07-30',
-  },
-  {
-    id: '15',
-    serialNumber: 15,
-    name: 'Karan Verma',
-    enrollmentNumber: 'JBPI2021015',
-    course: 'B.Ed',
-    batchYear: '2021-2023',
-    enrollmentDate: '2021-08-01',
-    courseDurationInMonths: 24,
-    graduationDate: '2023-07-10',
-  },
-  {
-    id: '16',
-    serialNumber: 16,
-    name: 'Ishika Jain',
-    enrollmentNumber: 'JBPI2024016',
-    course: 'Lab Technician',
-    batchYear: '2024-2026',
-    enrollmentDate: '2024-02-01',
-    courseDurationInMonths: 24,
-    graduationDate: null,
-  },
+  // Add more mock students if needed, matching the new Student type and course names
 ];
 
-export const mockCertificates: Certificate[] = [
+
+// Mock data for certificates (simplified for brevity, adjust as needed)
+export const mockCertificates: Omit<Certificate, 'id' | 'createdAt' | 'updatedAt'>[] = [
   {
-    id: 'cert1',
+    studentId: '1', // Placeholder, ensure studentId matches actual student IDs if linking
     studentName: 'Aarav Sharma',
-    enrollmentNumber: 'JBPI2021001',
-    programType: 'Diploma',
-    documentLink: 'https://drive.google.com/file/d/example1/view?usp=sharing',
-    issuedDate: '2023-08-01',
-    course: 'D.Pharm',
+    studentEnrollmentNumber: 'JBPI2021001',
+    studentCourse: 'D.PHARMA (Ayurved & Homeopath)',
+    studentProgramType: 'Certificate',
+    certificateNumber: 'CERT-JBPI2021001-001',
+    certificateType: 'diploma', // D.Pharma could be diploma
+    issueDate: '2023-08-01',
+    gdriveLink: 'https://docs.google.com/document/d/example',
   },
   {
-    id: 'cert2',
+    studentId: '2',
     studentName: 'Diya Patel',
-    enrollmentNumber: 'JBPI2022002',
-    programType: 'Certificate',
-    documentLink: 'https://drive.google.com/file/d/example2/view?usp=sharing',
-    issuedDate: '2022-04-15',
-    course: 'CCC',
+    studentEnrollmentNumber: 'JBPI2022002',
+    studentCourse: 'CCC',
+    studentProgramType: 'Certificate',
+    certificateNumber: 'CERT-JBPI2022002-001',
+    certificateType: 'completion',
+    issueDate: '2022-04-15',
+    gdriveLink: 'https://docs.google.com/document/d/example',
   },
   {
-    id: 'cert3',
+    studentId: '3',
     studentName: 'Rohan Mehta',
-    enrollmentNumber: 'JBPI2020003',
-    programType: 'Degree',
-    documentLink: 'https://drive.google.com/file/d/example3/view?usp=sharing',
-    issuedDate: '2022-07-01',
-    course: 'B.Ed',
-  },
-  {
-    id: 'cert4',
-    studentName: 'Amit Kumar',
-    enrollmentNumber: 'JBPI2022005',
-    programType: 'Diploma',
-    documentLink: 'https://drive.google.com/file/d/example4/view?usp=sharing',
-    issuedDate: '2024-07-10',
-    course: 'Lab Technician',
-  },
-  {
-    id: 'cert5',
-    studentName: 'Sneha Reddy',
-    enrollmentNumber: 'JBPI2023006',
-    programType: 'Certificate',
-    documentLink: 'https://drive.google.com/file/d/example5/view?usp=sharing',
-    issuedDate: '2023-06-20',
-    course: 'CCC',
-  },
-  {
-    id: 'cert6',
-    studentName: 'Vikram Yadav',
-    enrollmentNumber: 'JBPI2021007',
-    programType: 'Degree',
-    documentLink: 'https://drive.google.com/file/d/example6/view?usp=sharing',
-    issuedDate: '2023-07-05',
-    course: 'B.Ed',
-  },
-  {
-    id: 'cert7',
-    studentName: 'Rajesh Nair',
-    enrollmentNumber: 'JBPI2022009',
-    programType: 'Diploma',
-    documentLink: 'https://drive.google.com/file/d/example7/view?usp=sharing',
-    issuedDate: '2023-07-25',
-    course: 'OT Technician',
-  },
-  {
-    id: 'cert8',
-    studentName: 'Kavita Joshi',
-    enrollmentNumber: 'JBPI2023010',
-    programType: 'Certificate',
-    documentLink: 'https://drive.google.com/file/d/example8/view?usp=sharing',
-    issuedDate: '2024-01-05',
-    course: 'CCC',
-  },
-  {
-    id: 'cert9',
-    studentName: 'Manish Chouhan',
-    enrollmentNumber: 'JBPI2020011',
-    programType: 'Degree',
-    documentLink: 'https://drive.google.com/file/d/example9/view?usp=sharing',
-    issuedDate: '2022-07-10',
-    course: 'B.Ed',
-  },
-  {
-    id: 'cert10',
-    studentName: 'Arjun Singh',
-    enrollmentNumber: 'JBPI2022013',
-    programType: 'Diploma',
-    documentLink: 'https://drive.google.com/file/d/example10/view?usp=sharing',
-    issuedDate: '2024-08-20', // Corresponds to future graduation date
-    course: 'D.Pharm',
-  },
-  {
-    id: 'cert11',
-    studentName: 'Mira Desai',
-    enrollmentNumber: 'JBPI2023014',
-    programType: 'Certificate',
-    documentLink: 'https://drive.google.com/file/d/example11/view?usp=sharing',
-    issuedDate: '2023-08-10',
-    course: 'CCC',
-  },
-  {
-    id: 'cert12',
-    studentName: 'Karan Verma',
-    enrollmentNumber: 'JBPI2021015',
-    programType: 'Degree',
-    documentLink: 'https://drive.google.com/file/d/example12/view?usp=sharing',
-    issuedDate: '2023-07-20',
-    course: 'B.Ed',
+    studentEnrollmentNumber: 'JBPI2020003',
+    studentCourse: 'B.Ed.',
+    studentProgramType: 'Degree',
+    certificateNumber: 'CERT-JBPI2020003-001',
+    certificateType: 'degree',
+    issueDate: '2022-07-01',
+    gdriveLink: 'https://docs.google.com/document/d/example',
+    marksheetLinks: [
+        { semester: 'Semester 1', link: 'https://docs.google.com/document/d/sem1_example' },
+        { semester: 'Semester 2', link: 'https://docs.google.com/document/d/sem2_example' },
+    ]
   },
 ];
 
-export const courseOptions = [
-  { value: "All", label: "All Courses" },
-  { value: "D.Pharm", label: "D.Pharm" },
-  { value: "CCC", label: "CCC" },
-  { value: "B.Ed", label: "B.Ed" },
-  { value: "Lab Technician", label: "Lab Technician" },
-  { value: "OT Technician", label: "OT Technician" },
-];
 
 export const yearOptions = [
   { value: "All", label: "All Years" },
@@ -307,3 +229,16 @@ export const yearOptions = [
   { value: "2021", label: "2021" },
   { value: "2020", label: "2020" },
 ];
+
+// This is the old courseOptions. It will be replaced by allCourseOptions / studentFormCourseOptions.
+// Keeping it commented out for reference during transition.
+/*
+export const courseOptions = [
+  { value: "All", label: "All Courses" },
+  { value: "D.Pharm", label: "D.Pharm" },
+  { value: "CCC", label: "CCC" },
+  { value: "B.Ed", label: "B.Ed" },
+  { value: "Lab Technician", label: "Lab Technician" },
+  { value: "OT Technician", label: "OT Technician" },
+];
+*/

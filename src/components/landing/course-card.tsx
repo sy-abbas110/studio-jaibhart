@@ -1,12 +1,15 @@
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import type { LucideIcon } from "lucide-react";
 
 interface CourseCardProps {
   title: string;
   description: string;
-  Icon: LucideIcon;
+  Icon: LucideIcon; // This was for the old flagship courses. The new section doesn't use individual icons per course in the same way.
 }
 
+// This component might be deprecated or repurposed if AllCoursesSection fully replaces its functionality.
+// For now, keeping it as it was, but it's not used on the homepage anymore.
 export function CourseCard({ title, description, Icon }: CourseCardProps) {
   return (
     <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 bg-card/80 backdrop-blur-sm">

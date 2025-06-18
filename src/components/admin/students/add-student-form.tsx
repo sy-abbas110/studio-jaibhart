@@ -35,7 +35,7 @@ import { format, isValid, parseISO } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { studentFormSchema, type StudentFormValues } from "@/lib/schemas/student-schema";
 import { addStudentAction, updateStudentAction } from "@/app/actions/student-actions";
-import { courseOptions } from "@/lib/data";
+import { studentFormCourseOptions } from "@/lib/data"; // Updated import
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { Student } from "@/lib/types";
@@ -117,10 +117,10 @@ export function AddStudentForm({ initialData, studentId }: AddStudentFormProps) 
       state: "",
       pincode: "",
       course: "",
-      programType: undefined, // This is required, undefined will cause validation error
+      programType: undefined, 
       batch: "",
       admissionDate: "",
-      courseDurationInMonths: undefined, // This is required, undefined will cause validation error
+      courseDurationInMonths: undefined, 
       totalFees: undefined,
       feesSubmitted: undefined,
       remarks: "",
@@ -134,7 +134,6 @@ export function AddStudentForm({ initialData, studentId }: AddStudentFormProps) 
     },
   });
   
-  // Log form errors for debugging
   const { formState: { errors } } = form;
   useEffect(() => {
     if (Object.keys(errors).length > 0) {
@@ -168,11 +167,11 @@ export function AddStudentForm({ initialData, studentId }: AddStudentFormProps) 
   const selectedProgramType = form.watch("programType");
 
   async function onSubmit(values: StudentFormValues) {
-    console.log("RHF onSubmit handler called with values:", values); // Add this log
+    console.log("RHF onSubmit handler called with values:", values); 
     setIsSubmitting(true);
     try {
       let result;
-      console.log('Started submitting student data'); // Renamed for clarity
+      console.log('Started submitting student data'); 
       if (mode === 'edit' && studentId) {
         result = await updateStudentAction(studentId, values);
       } else {
@@ -185,7 +184,7 @@ export function AddStudentForm({ initialData, studentId }: AddStudentFormProps) 
           description: mode === 'edit' ? "Student updated successfully." : "Student added successfully.",
         });
         if (mode === 'add') {
-            form.reset({ // Reset with specific default for add mode to clear fields correctly
+            form.reset({ 
               enrollmentNumber: "",
               firstName: "",
               lastName: "",
@@ -442,7 +441,7 @@ export function AddStudentForm({ initialData, studentId }: AddStudentFormProps) 
                         <FormLabel>Course *</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
                             <FormControl><SelectTrigger><SelectValue placeholder="Select course" /></SelectTrigger></FormControl>
-                            <SelectContent>{courseOptions.filter(c => c.value !== "All").map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent>
+                            <SelectContent>{studentFormCourseOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent>
                         </Select>
                         <FormMessage />
                     </FormItem>
@@ -662,4 +661,3 @@ export function AddStudentForm({ initialData, studentId }: AddStudentFormProps) 
     </Form>
   );
 }
-
