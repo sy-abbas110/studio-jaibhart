@@ -20,7 +20,7 @@ body {
     --secondary-foreground: 36 100% 30%; /* Darker Saffron for text on Lighter Saffron */
     --muted: 60 30% 85%; /* Muted beige */
     --muted-foreground: 60 20% 45%;
-    --accent: 222 100% 23%; /* Deep blue */
+    --accent: 222 100% 23%; /* Deep blue - Main site accent */
     --accent-foreground: 0 0% 100%; /* White for contrast on Deep blue */
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
@@ -34,13 +34,14 @@ body {
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
 
-    /* Sidebar variables, adjusted to align with the new theme */
+    /* Sidebar variables, adjusted to align with the Saffron theme */
     --sidebar-background: 60 50% 88%; /* Beige slightly darker than page background */
-    --sidebar-foreground: 222 80% 15%; /* Dark blue, slightly desaturated */
-    --sidebar-primary: 36 100% 60%; /* Saffron, same as main primary */
-    --sidebar-primary-foreground: 0 0% 100%; /* White */
-    --sidebar-accent: 222 100% 30%; /* Slightly lighter deep blue for sidebar accents */
-    --sidebar-accent-foreground: 0 0% 100%; /* White */
+    --sidebar-foreground: 222 80% 15%; /* Dark blue, slightly desaturated for text */
+    --sidebar-primary: 36 100% 60%; /* Saffron, same as main primary - for active items */
+    --sidebar-primary-foreground: 0 0% 100%; /* White - for text on active items */
+    /* Sidebar accent is used for hovers. Let's make it Saffron-toned. */
+    --sidebar-accent: 36 100% 85%; /* Lighter Saffron (same as --secondary) */
+    --sidebar-accent-foreground: 36 100% 30%; /* Darker Saffron (same as --secondary-foreground) */
     --sidebar-border: 36 40% 75%; /* Saffron-toned border, slightly darker */
     --sidebar-ring: 36 100% 60%; /* Saffron */
   }
@@ -75,8 +76,8 @@ body {
     --sidebar-foreground: 60 25% 85%;
     --sidebar-primary: 36 100% 60%;
     --sidebar-primary-foreground: 222 25% 5%;
-    --sidebar-accent: 222 100% 65%;
-    --sidebar-accent-foreground: 222 25% 5%;
+    --sidebar-accent: 36 100% 50%; /* Saffron-toned hover for dark mode */
+    --sidebar-accent-foreground: 60 30% 90%; /* Text for Saffron-toned hover */
     --sidebar-border: 222 25% 15%;
     --sidebar-ring: 36 100% 60%;
   }
