@@ -43,3 +43,4 @@ export default function AdminDashboardLayout({ children }: { children: ReactNode
     </AuthGuard>
   );
 }
+

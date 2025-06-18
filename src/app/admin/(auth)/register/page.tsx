@@ -73,7 +73,7 @@ export default function RegisterPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="bg-input"
+                className="bg-input border-border focus:border-primary"
               />
             </div>
             <div className="space-y-2">
@@ -85,7 +85,7 @@ export default function RegisterPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="bg-input"
+                className="bg-input border-border focus:border-primary"
               />
             </div>
             <div className="space-y-2">
@@ -97,7 +97,7 @@ export default function RegisterPage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                className="bg-input"
+                className="bg-input border-border focus:border-primary"
               />
             </div>
             <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={loading}>
