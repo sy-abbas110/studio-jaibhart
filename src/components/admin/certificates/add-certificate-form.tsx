@@ -1,16 +1,16 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format, isValid, parseISO } from "date-fns";
-import { Search, User, Link as LinkIcon, Award, Loader2, Save, PlusCircle, Trash2, CalendarIcon } from "lucide-react";
+import { Search, User, Link as LinkIcon, Award, Loader2, Save, PlusCircle, Trash2, CalendarIcon, Edit } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "@/components/ui/label"; // Not directly used, FormLabel is used
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -27,8 +27,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 
 import { useToast } from "@/hooks/use-toast";
-import { getStudentsAction } from "@/app/actions/student-actions";
-import { addCertificateAction } from "@/app/actions/certificate-actions";
+import { getStudentsAction, getStudentByIdAction } from "@/app/actions/student-actions";
+import { addCertificateAction, updateCertificateAction } from "@/app/actions/certificate-actions";
 import type { Student, Certificate } from "@/lib/types";
 import { certificateFormSchema, type CertificateFormValues } from "@/lib/schemas/certificate-schema";
 import { cn } from "@/lib/utils";
@@ -51,21 +51,32 @@ const gradeOptions = [
   { value: "pass", label: "Pass" },
 ];
 
+interface AddCertificateFormProps {
+  initialData?: CertificateFormValues | Certificate | null; // For edit mode
+  certificateId?: string; // For edit mode
+  studentForEdit?: Student | null; // Pre-fetched student for edit mode
+}
 
-export function AddCertificateForm() {
+export function AddCertificateForm({ initialData, certificateId, studentForEdit }: AddCertificateFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [allStudents, setAllStudents] = useState<Student[]>([]);
-  const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
-  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(studentForEdit || null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [studentsLoading, setStudentsLoading] = useState(true);
   const [formError, setFormError] = useState<string | null>(null);
+  
+  const mode = certificateId && initialData ? 'edit' : 'add';
 
   const form = useForm<CertificateFormValues>({
     resolver: zodResolver(certificateFormSchema),
-    defaultValues: {
+    defaultValues: mode === 'edit' && initialData ? {
+      ...initialData,
+      issueDate: initialData.issueDate && isValid(parseISO(initialData.issueDate)) ? initialData.issueDate : "",
+      percentage: initialData.percentage ?? undefined,
+      marksheetLinks: initialData.marksheetLinks || [{ semester: "", link: "" }],
+    } : {
       studentId: "",
       certificateNumber: "",
       certificateType: undefined,
@@ -73,7 +84,7 @@ export function AddCertificateForm() {
       grade: undefined,
       percentage: undefined,
       gdriveLink: "",
-      marksheetLinks: [],
+      marksheetLinks: [{ semester: "", link: "" }],
       remarks: "",
     },
   });
@@ -83,55 +94,83 @@ export function AddCertificateForm() {
     name: "marksheetLinks",
   });
 
-  useEffect(() => {
-    async function fetchStudents() {
-      setStudentsLoading(true);
-      const result = await getStudentsAction();
-      if (result.success && result.students) {
-        // Filter for students who are completed or active, as they might be eligible
-        const eligibleStudents = result.students.filter(s => s.status === 'Completed' || s.status === 'Active');
-        setAllStudents(eligibleStudents);
-        setFilteredStudents(eligibleStudents);
-      } else {
-        toast({ title: "Error", description: "Failed to load students.", variant: "destructive" });
-      }
-      setStudentsLoading(false);
+  // Student Search/Filter Logic (only for add mode)
+  const filteredStudents = useMemo(() => {
+    if (mode === 'edit' || !searchTerm) {
+      return allStudents.filter(s => s.status === 'Completed' || s.status === 'Active');
     }
-    fetchStudents();
-  }, [toast]);
+    return allStudents.filter(
+      (student) =>
+        (student.status === 'Completed' || student.status === 'Active') &&
+        (student.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.enrollmentNumber.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+  }, [searchTerm, allStudents, mode]);
+
 
   useEffect(() => {
-    if (!searchTerm) {
-      setFilteredStudents(allStudents);
-    } else {
-      setFilteredStudents(
-        allStudents.filter(
-          (student) =>
-            student.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            student.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            student.enrollmentNumber.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-      );
+    async function fetchStudentsData() {
+      if (mode === 'add') {
+        setStudentsLoading(true);
+        const result = await getStudentsAction();
+        if (result.success && result.students) {
+          setAllStudents(result.students);
+        } else {
+          toast({ title: "Error", description: "Failed to load students.", variant: "destructive" });
+        }
+        setStudentsLoading(false);
+      } else if (mode === 'edit' && studentForEdit) {
+         setSelectedStudent(studentForEdit);
+         setStudentsLoading(false); // Student data is pre-fetched
+      }
     }
-  }, [searchTerm, allStudents]);
+    fetchStudentsData();
+  }, [mode, studentForEdit, toast]);
+  
+  useEffect(() => {
+    if (mode === 'edit' && initialData) {
+      const transformedInitialData = {
+        ...initialData,
+        issueDate: initialData.issueDate && isValid(parseISO(initialData.issueDate)) ? initialData.issueDate : "",
+        percentage: initialData.percentage ?? undefined,
+        marksheetLinks: initialData.marksheetLinks && initialData.marksheetLinks.length > 0 ? initialData.marksheetLinks : [{ semester: "", link: "" }],
+      };
+      form.reset(transformedInitialData as CertificateFormValues);
+      if (studentForEdit) {
+        setSelectedStudent(studentForEdit);
+        form.setValue("studentId", studentForEdit.id);
+      }
+    }
+  }, [initialData, studentForEdit, mode, form]);
 
   useEffect(() => {
     if (selectedStudent) {
       form.setValue("studentId", selectedStudent.id);
-      // Auto-generate certificate number (can be made more robust)
-      const certNum = `CERT-${selectedStudent.enrollmentNumber}-${Date.now().toString().slice(-6)}`;
-      form.setValue("certificateNumber", certNum);
+      if (mode === 'add') { // Only auto-populate cert number in add mode
+        const certNum = `CERT-${selectedStudent.enrollmentNumber}-${Date.now().toString().slice(-6)}`;
+        form.setValue("certificateNumber", certNum);
+      }
       // Reset marksheet links if student program type is not Degree
       if (selectedStudent.programType !== "Degree") {
         form.setValue("marksheetLinks", []);
-      } else if (form.getValues("marksheetLinks")?.length === 0) {
-        // Auto-add one empty marksheet link for degree students if none exist
+      } else if (form.getValues("marksheetLinks")?.length === 0 && mode === 'add') {
          append({ semester: "", link: "" });
       }
-    } else {
-      form.reset(); // Reset form if student is deselected
+    } else if (mode === 'add') { // Only reset fully if in add mode and student deselected
+      form.reset({
+        studentId: "",
+        certificateNumber: "",
+        certificateType: undefined,
+        issueDate: "",
+        grade: undefined,
+        percentage: undefined,
+        gdriveLink: "",
+        marksheetLinks: [{ semester: "", link: "" }],
+        remarks: "",
+      });
     }
-  }, [selectedStudent, form, append]);
+  }, [selectedStudent, form, mode, append]);
 
   async function onSubmit(values: CertificateFormValues) {
     if (!selectedStudent) {
@@ -141,17 +180,24 @@ export function AddCertificateForm() {
     setIsSubmitting(true);
     setFormError(null);
 
-    const result = await addCertificateAction(values, selectedStudent);
+    let result;
+    if (mode === 'edit' && certificateId) {
+      result = await updateCertificateAction(certificateId, values, selectedStudent);
+    } else {
+      result = await addCertificateAction(values, selectedStudent);
+    }
 
     if (result.success) {
-      toast({ title: "Success!", description: "Certificate issued successfully." });
-      form.reset();
-      setSelectedStudent(null);
-      setSearchTerm("");
-      // router.push("/admin/certificates/manage"); // Uncomment when manage page exists
-      // router.refresh();
+      toast({ title: "Success!", description: `Certificate ${mode === 'edit' ? 'updated' : 'issued'} successfully.` });
+      if (mode === 'add') {
+        form.reset();
+        setSelectedStudent(null);
+        setSearchTerm("");
+      }
+      router.push("/admin/certificates/manage");
+      router.refresh();
     } else {
-      toast({ title: "Error Issuing Certificate", description: result.message, variant: "destructive" });
+      toast({ title: `Error ${mode === 'edit' ? 'Updating' : 'Issuing'} Certificate`, description: result.message, variant: "destructive" });
       setFormError(result.message);
     }
     setIsSubmitting(false);
@@ -160,20 +206,22 @@ export function AddCertificateForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        {/* Student Selection */}
+        {/* Student Selection Card */}
         <Card>
-          <CardHeader><CardTitle>Select Student</CardTitle></CardHeader>
+          <CardHeader><CardTitle>{mode === 'edit' ? 'Selected Student' : 'Select Student'}</CardTitle></CardHeader>
           <CardContent className="space-y-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder="Search by name or enrollment number..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-                disabled={studentsLoading}
-              />
-            </div>
+            {mode === 'add' && (
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="Search by name or enrollment number..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                  disabled={studentsLoading}
+                />
+              </div>
+            )}
 
             {selectedStudent ? (
               <div className="p-4 bg-primary/10 border border-primary/30 rounded-lg">
@@ -185,44 +233,53 @@ export function AddCertificateForm() {
                     </p>
                     <Badge variant="secondary" className="mt-1">{selectedStudent.programType}</Badge>
                   </div>
-                  <Button type="button" variant="outline" size="sm" onClick={() => {setSelectedStudent(null); form.setValue("studentId", "");}}>
-                    Change
-                  </Button>
+                  {mode === 'add' && (
+                    <Button type="button" variant="outline" size="sm" onClick={() => {setSelectedStudent(null); form.setValue("studentId", "");}}>
+                      Change
+                    </Button>
+                  )}
                 </div>
               </div>
             ) : (
-              <div className="grid gap-2 max-h-60 overflow-y-auto border rounded-md p-2">
-                {studentsLoading && <p className="text-center text-muted-foreground py-4">Loading students...</p>}
-                {!studentsLoading && filteredStudents.map((student) => (
-                  <div
-                    key={student.id}
-                    className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer"
-                    onClick={() => setSelectedStudent(student)}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium text-foreground">{student.firstName} {student.lastName}</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {student.enrollmentNumber} • {student.course}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <Badge
-                          variant={student.status === "Completed" ? "default" : "secondary"}
-                          className={student.status === "Completed" ? "bg-green-600/20 text-green-700" : "bg-yellow-500/20 text-yellow-700"}
-                        >
-                          {student.status}
-                        </Badge>
-                        <p className="text-xs text-muted-foreground mt-1">{student.programType}</p>
+              mode === 'add' && (
+                <div className="grid gap-2 max-h-60 overflow-y-auto border rounded-md p-2">
+                  {studentsLoading && <p className="text-center text-muted-foreground py-4">Loading students...</p>}
+                  {!studentsLoading && filteredStudents.map((student) => (
+                    <div
+                      key={student.id}
+                      className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer"
+                      onClick={() => setSelectedStudent(student)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-medium text-foreground">{student.firstName} {student.lastName}</h4>
+                          <p className="text-sm text-muted-foreground">
+                            {student.enrollmentNumber} • {student.course}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                           <Badge
+                              variant={student.status === "Completed" ? "default" : "secondary"}
+                              className={cn(
+                                "capitalize",
+                                student.status === "Completed" ? "bg-green-600/20 text-green-700" : 
+                                student.status === "Active" ? "bg-blue-500/20 text-blue-700" : 
+                                "bg-yellow-500/20 text-yellow-700"
+                              )}
+                            >
+                            {student.status}
+                          </Badge>
+                          <p className="text-xs text-muted-foreground mt-1">{student.programType}</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-                {!studentsLoading && filteredStudents.length === 0 && <p className="text-center text-muted-foreground py-4">No students found.</p>}
-              </div>
+                  ))}
+                  {!studentsLoading && filteredStudents.length === 0 && <p className="text-center text-muted-foreground py-4">No eligible (Active/Completed) students found.</p>}
+                </div>
+              )
             )}
              <FormField control={form.control} name="studentId" render={({ field }) => (
-                <FormItem className="hidden"> {/* Hidden but necessary for validation */}
+                <FormItem className="hidden">
                     <FormControl><Input {...field} /></FormControl>
                     <FormMessage />
                 </FormItem>
@@ -230,23 +287,23 @@ export function AddCertificateForm() {
           </CardContent>
         </Card>
 
-        {selectedStudent && (
+        {/* Certificate Information (always shown if student selected or in edit mode) */}
+        {(selectedStudent || mode === 'edit') && (
           <>
-            {/* Certificate Information */}
             <Card>
               <CardHeader><CardTitle>Certificate Information</CardTitle></CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <FormField control={form.control} name="certificateNumber" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Certificate Number *</FormLabel>
-                    <FormControl><Input {...field} readOnly className="bg-muted font-mono" /></FormControl>
+                    <FormControl><Input {...field} readOnly={mode === 'add'} className={mode === 'add' ? "bg-muted font-mono": "font-mono"} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="certificateType" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Certificate Type *</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
                       <FormControl><SelectTrigger><SelectValue placeholder="Select certificate type" /></SelectTrigger></FormControl>
                       <SelectContent>{certificateTypeOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent>
                     </Select>
@@ -275,8 +332,8 @@ export function AddCertificateForm() {
                 <FormField control={form.control} name="grade" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Grade</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl><SelectTrigger><SelectValue placeholder="Select grade" /></SelectTrigger></FormControl>
+                    <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
+                      <FormControl><SelectTrigger><SelectValue placeholder="Select grade (Optional)" /></SelectTrigger></FormControl>
                       <SelectContent>{gradeOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent>
                     </Select>
                     <FormMessage />
@@ -285,26 +342,25 @@ export function AddCertificateForm() {
                 <FormField control={form.control} name="percentage" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Percentage (%)</FormLabel>
-                    <FormControl><Input type="number" placeholder="e.g., 88.5" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || undefined)} /></FormControl>
+                    <FormControl><Input type="number" placeholder="e.g., 88.5 (Optional)" {...field} onChange={e => field.onChange(e.target.value === "" ? undefined : parseFloat(e.target.value))} value={field.value ?? ""} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
               </CardContent>
             </Card>
 
-            {/* Document Links */}
             <Card>
               <CardHeader><CardTitle className="flex items-center gap-2"><LinkIcon className="w-5 h-5 text-primary" /> Document Links</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <FormField control={form.control} name="gdriveLink" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Certificate/Degree Google Drive Link</FormLabel>
-                    <FormControl><Input placeholder="https://drive.google.com/file/d/..." {...field} /></FormControl>
+                    <FormControl><Input placeholder="https://drive.google.com/file/d/... (Optional)" {...field} value={field.value ?? ""} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
 
-                {selectedStudent.programType === "Degree" && (
+                {selectedStudent?.programType === "Degree" && (
                   <div>
                     <FormLabel className="text-base font-medium mb-2 block">Semester-wise Marksheet Links</FormLabel>
                     {fields.map((item, index) => (
@@ -336,14 +392,13 @@ export function AddCertificateForm() {
               </CardContent>
             </Card>
 
-            {/* Additional Information */}
             <Card>
               <CardHeader><CardTitle>Additional Information</CardTitle></CardHeader>
               <CardContent>
                 <FormField control={form.control} name="remarks" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Remarks</FormLabel>
-                    <FormControl><Textarea rows={3} placeholder="Any additional notes or special mentions" {...field} /></FormControl>
+                    <FormControl><Textarea rows={3} placeholder="Any additional notes or special mentions (Optional)" {...field} value={field.value ?? ""} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
@@ -359,14 +414,14 @@ export function AddCertificateForm() {
         )}
 
         <div className="flex justify-end space-x-4">
-          <Button type="button" variant="outline" onClick={() => router.back()}> {/* Or router.push("/admin/certificates/manage") */}
+          <Button type="button" variant="outline" onClick={() => router.push("/admin/certificates/manage")}>
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting || !selectedStudent} className="bg-primary hover:bg-primary/90">
+          <Button type="submit" disabled={isSubmitting || (!selectedStudent && mode === 'add')} className="bg-primary hover:bg-primary/90">
             {isSubmitting ? (
-              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Issuing...</>
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {mode === 'edit' ? 'Updating...' : 'Issuing...'}</>
             ) : (
-              <><Award className="w-4 h-4 mr-2" /> Issue Certificate</>
+              <>{mode === 'edit' ? <Edit className="w-4 h-4 mr-2" /> : <Award className="w-4 h-4 mr-2" /> } {mode === 'edit' ? 'Update Certificate' : 'Issue Certificate'}</>
             )}
           </Button>
         </div>
