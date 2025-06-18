@@ -95,8 +95,8 @@ export function AddStudentForm({ initialData, studentId }: AddStudentFormProps) 
       graduationDate: initialData.graduationDate && isValid(parseISO(initialData.graduationDate)) ? initialData.graduationDate : undefined,
       totalFees: initialData.totalFees ?? undefined,
       feesSubmitted: initialData.feesSubmitted ?? undefined,
-      courseDurationInMonths: initialData.courseDurationInMonths ?? undefined,
-      semesterLinks: initialData.semesterLinks || [{ semester: "", link: "" }],
+      courseDurationInMonths: initialData.courseDurationInMonths ?? undefined, // Should be a number
+      semesterLinks: initialData.semesterLinks && initialData.semesterLinks.length > 0 ? initialData.semesterLinks : [{ semester: "", link: "" }],
     } : {
       enrollmentNumber: "",
       firstName: "",
@@ -117,10 +117,10 @@ export function AddStudentForm({ initialData, studentId }: AddStudentFormProps) 
       state: "",
       pincode: "",
       course: "",
-      programType: undefined,
+      programType: undefined, // This is required, undefined will cause validation error
       batch: "",
       admissionDate: "",
-      courseDurationInMonths: undefined,
+      courseDurationInMonths: undefined, // This is required, undefined will cause validation error
       totalFees: undefined,
       feesSubmitted: undefined,
       remarks: "",
@@ -133,6 +133,15 @@ export function AddStudentForm({ initialData, studentId }: AddStudentFormProps) 
       graduationDate: undefined,
     },
   });
+  
+  // Log form errors for debugging
+  const { formState: { errors } } = form;
+  useEffect(() => {
+    if (Object.keys(errors).length > 0) {
+      console.log("Form errors:", errors);
+    }
+  }, [errors]);
+
 
   useEffect(() => {
     if (mode === 'edit' && initialData) {
@@ -159,9 +168,11 @@ export function AddStudentForm({ initialData, studentId }: AddStudentFormProps) 
   const selectedProgramType = form.watch("programType");
 
   async function onSubmit(values: StudentFormValues) {
+    console.log("RHF onSubmit handler called with values:", values); // Add this log
     setIsSubmitting(true);
     try {
       let result;
+      console.log('Started submitting student data'); // Renamed for clarity
       if (mode === 'edit' && studentId) {
         result = await updateStudentAction(studentId, values);
       } else {
@@ -174,10 +185,44 @@ export function AddStudentForm({ initialData, studentId }: AddStudentFormProps) 
           description: mode === 'edit' ? "Student updated successfully." : "Student added successfully.",
         });
         if (mode === 'add') {
-            form.reset(); // Reset form only in add mode
+            form.reset({ // Reset with specific default for add mode to clear fields correctly
+              enrollmentNumber: "",
+              firstName: "",
+              lastName: "",
+              fatherName: "",
+              motherName: "",
+              dateOfBirth: undefined,
+              gender: undefined,
+              bloodGroup: undefined,
+              category: undefined,
+              phone: "",
+              alternatePhone: "",
+              email: "",
+              emergencyContact: "",
+              aadharNumber: "",
+              address: "",
+              city: "",
+              state: "",
+              pincode: "",
+              course: "",
+              programType: undefined,
+              batch: "",
+              admissionDate: "",
+              courseDurationInMonths: undefined,
+              totalFees: undefined,
+              feesSubmitted: undefined,
+              remarks: "",
+              status: "Active",
+              certificateStatus: "Pending",
+              profilePictureUrl: "",
+              programCertificateLink: "",
+              degreeCertificateLink: "",
+              semesterLinks: [{ semester: "", link: "" }],
+              graduationDate: undefined,
+            }); 
         }
         router.push("/admin/students/manage");
-        router.refresh(); // To refetch data on the manage page
+        router.refresh(); 
       } else {
         toast({
           title: mode === 'edit' ? "Error Updating Student" : "Error Adding Student",
@@ -186,10 +231,10 @@ export function AddStudentForm({ initialData, studentId }: AddStudentFormProps) 
         });
       }
     } catch (error) {
-      console.error("Submission error:", error);
+      console.error("Submission error in AddStudentForm:", error);
       toast({
         title: "Submission Failed",
-        description: "An unexpected error occurred. Please try again.",
+        description: (error as Error).message || "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -441,7 +486,7 @@ export function AddStudentForm({ initialData, studentId }: AddStudentFormProps) 
                 <FormField control={form.control} name="courseDurationInMonths" render={({ field }) => (
                     <FormItem>
                         <FormLabel>Course Duration (Months) *</FormLabel>
-                        <FormControl><Input type="number" placeholder="e.g., 24" {...field} onChange={e => field.onChange(parseInt(e.target.value,10) || undefined )}/></FormControl>
+                        <FormControl><Input type="number" placeholder="e.g., 24" {...field} onChange={e => field.onChange(e.target.value === "" ? undefined : parseInt(e.target.value,10) )}/></FormControl>
                         <FormMessage />
                     </FormItem>
                 )} />
@@ -479,14 +524,14 @@ export function AddStudentForm({ initialData, studentId }: AddStudentFormProps) 
                 <FormField control={form.control} name="totalFees" render={({ field }) => (
                     <FormItem>
                         <FormLabel>Total Fees (₹)</FormLabel>
-                        <FormControl><Input type="number" placeholder="Total course fees" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || undefined)} value={field.value ?? ""} /></FormControl>
+                        <FormControl><Input type="number" placeholder="Total course fees" {...field} onChange={e => field.onChange(e.target.value === "" ? undefined : parseFloat(e.target.value))} value={field.value ?? ""} /></FormControl>
                         <FormMessage />
                     </FormItem>
                 )} />
                 <FormField control={form.control} name="feesSubmitted" render={({ field }) => (
                     <FormItem>
                         <FormLabel>Fees Submitted (₹)</FormLabel>
-                        <FormControl><Input type="number" placeholder="Amount paid" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || undefined)} value={field.value ?? ""} /></FormControl>
+                        <FormControl><Input type="number" placeholder="Amount paid" {...field} onChange={e => field.onChange(e.target.value === "" ? undefined : parseFloat(e.target.value))} value={field.value ?? ""} /></FormControl>
                         <FormMessage />
                     </FormItem>
                 )} />
@@ -617,3 +662,4 @@ export function AddStudentForm({ initialData, studentId }: AddStudentFormProps) 
     </Form>
   );
 }
+
