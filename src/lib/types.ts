@@ -57,32 +57,36 @@ export interface Student {
   }>;
 
   // Firestore timestamps
-  createdAt?: Timestamp | Date | string; // Allow string for form submission, convert to Timestamp in service
-  updatedAt?: Timestamp | Date | string; // Allow string for form submission, convert to Timestamp in service
+  createdAt?: Timestamp | Date | string; 
+  updatedAt?: Timestamp | Date | string; 
 }
 
-export interface Certificate { // This represents individual certificate/marksheet records
+export interface Certificate {
   id: string; // Firestore document ID
-  studentId?: string; // Firestore ID of the student this certificate belongs to
-  studentName: string; // Denormalized for easy display
-  enrollmentNumber: string; // Denormalized
+  studentId: string; // Firestore ID of the student this certificate belongs to
+  studentEnrollmentNumber: string; // Denormalized
+  studentName: string; // Denormalized
+  studentCourse: string; // Denormalized
+  studentProgramType: 'Degree' | 'Certificate'; // Denormalized from student
 
-  course: string; // Course this certificate is related to
-  programType: string; // Generalizing for now based on mockCertificates
+  certificateNumber: string; // Auto-generated or unique identifier
+  certificateType: 'completion' | 'degree' | 'diploma' | 'marksheet' | 'provisional';
+  issueDate: string; // YYYY-MM-DD
+  grade?: 'A+' | 'A' | 'B+' | 'B' | 'C+' | 'C' | 'pass';
+  percentage?: number; // e.g., 85.5
 
-  documentLink: string; // GDrive link or Firebase Storage URL
-  storagePath?: string; // Optional: path in Firebase Storage if uploaded
-  fileName?: string; // Optional: original file name
+  gdriveLink?: string; // Link to the main certificate document
+  marksheetLinks?: Array<{ semester: string; link: string }>; // For degree students, semester-wise marksheets
 
-  issuedDate: string; // YYYY-MM-DD
+  remarks?: string;
 
   // Firestore timestamps
   createdAt?: Timestamp | Date | string;
   updatedAt?: Timestamp | Date | string;
 }
 
+
 // For forms, especially with react-hook-form and Zod
-// StudentFormData should now fully match StudentFormValues from Zod schema for consistency
 export type StudentFormData = Omit<Student, 'id' | 'createdAt' | 'updatedAt'> & {
   // Explicitly define all fields that are in the Zod schema
   enrollmentNumber: string;
@@ -120,4 +124,5 @@ export type StudentFormData = Omit<Student, 'id' | 'createdAt' | 'updatedAt'> & 
   graduationDate?: string | null;
 };
 
-export type CertificateFormData = Omit<Certificate, 'id' | 'createdAt' | 'updatedAt' | 'studentName' | 'enrollmentNumber'> & { studentId: string };
+export type CertificateFormData = Omit<Certificate, 'id' | 'createdAt' | 'updatedAt' | 'studentEnrollmentNumber' | 'studentName' | 'studentCourse' | 'studentProgramType'>;
+
