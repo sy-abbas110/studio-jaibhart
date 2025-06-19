@@ -35,7 +35,7 @@ import { format, isValid, parseISO } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { studentFormSchema, type StudentFormValues } from "@/lib/schemas/student-schema";
 import { addStudentAction, updateStudentAction } from "@/app/actions/student-actions";
-import { studentFormCourseOptions } from "@/lib/data"; // Updated import
+import { studentFormCourseOptions } from "@/lib/data"; 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { Student } from "@/lib/types";
@@ -76,7 +76,7 @@ const programTypeOptions = [
 ] as const;
 
 interface AddStudentFormProps {
-  initialData?: StudentFormValues | Student | null; // Student type for data from Firestore
+  initialData?: StudentFormValues | Student | null; 
   studentId?: string;
 }
 
@@ -86,58 +86,76 @@ export function AddStudentForm({ initialData, studentId }: AddStudentFormProps) 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const mode = studentId && initialData ? 'edit' : 'add';
 
+  const defaultAddValues: StudentFormValues = {
+    enrollmentNumber: "",
+    firstName: "",
+    lastName: "",
+    fatherName: "", // Changed from undefined
+    motherName: "", // Changed from undefined
+    dateOfBirth: undefined, // Calendar handles undefined for no selection
+    gender: undefined, // Select handles undefined
+    bloodGroup: undefined,
+    category: undefined,
+    phone: "",
+    alternatePhone: "", // Changed from undefined
+    email: "", // Changed from undefined
+    emergencyContact: "", // Changed from undefined
+    aadharNumber: "", // Changed from undefined
+    address: "", // Changed from undefined
+    city: "", // Changed from undefined
+    state: "", // Changed from undefined
+    pincode: "", // Changed from undefined
+    course: "", // Should be selected
+    programType: undefined, // Should be selected
+    batch: "",
+    admissionDate: "", // Should be selected
+    courseDurationInMonths: undefined, // Number input, user needs to fill
+    totalFees: undefined,
+    feesSubmitted: undefined,
+    remarks: "", // Changed from undefined
+    status: "Active", // Default status
+    certificateStatus: "Pending", // Default cert status
+    profilePictureUrl: "", // Changed from undefined
+    programCertificateLink: "", // Changed from undefined
+    degreeCertificateLink: "", // Changed from undefined
+    semesterLinks: [{ semester: "", link: "" }],
+    graduationDate: undefined, // Calendar handles undefined
+  };
+
   const form = useForm<StudentFormValues>({
     resolver: zodResolver(studentFormSchema),
     defaultValues: mode === 'edit' && initialData ? {
       ...initialData,
       dateOfBirth: initialData.dateOfBirth && isValid(parseISO(initialData.dateOfBirth)) ? initialData.dateOfBirth : undefined,
-      admissionDate: initialData.admissionDate && isValid(parseISO(initialData.admissionDate)) ? initialData.admissionDate : "", // required
+      admissionDate: initialData.admissionDate && isValid(parseISO(initialData.admissionDate)) ? initialData.admissionDate : "", 
       graduationDate: initialData.graduationDate && isValid(parseISO(initialData.graduationDate)) ? initialData.graduationDate : undefined,
       totalFees: initialData.totalFees ?? undefined,
       feesSubmitted: initialData.feesSubmitted ?? undefined,
-      courseDurationInMonths: initialData.courseDurationInMonths ?? undefined, // Should be a number
-      semesterLinks: initialData.semesterLinks && initialData.semesterLinks.length > 0 ? initialData.semesterLinks : [{ semester: "", link: "" }],
-    } : {
-      enrollmentNumber: "",
-      firstName: "",
-      lastName: "",
-      fatherName: "",
-      motherName: "",
-      dateOfBirth: undefined,
-      gender: undefined,
-      bloodGroup: undefined,
-      category: undefined,
-      phone: "",
-      alternatePhone: "",
-      email: "",
-      emergencyContact: "",
-      aadharNumber: "",
-      address: "",
-      city: "",
-      state: "",
-      pincode: "",
-      course: "",
-      programType: undefined, 
-      batch: "",
-      admissionDate: "",
-      courseDurationInMonths: undefined, 
-      totalFees: undefined,
-      feesSubmitted: undefined,
-      remarks: "",
-      status: "Active",
-      certificateStatus: "Pending",
-      profilePictureUrl: "",
-      programCertificateLink: "",
-      degreeCertificateLink: "",
-      semesterLinks: [{ semester: "", link: "" }],
-      graduationDate: undefined,
-    },
+      courseDurationInMonths: initialData.courseDurationInMonths ?? undefined,
+      semesterLinks: initialData.semesterLinks && initialData.semesterLinks.length > 0 ? initialData.semesterLinks.map(sl => ({ semester: sl.semester || "", link: sl.link || "" })) : [{ semester: "", link: "" }],
+      // Ensure all optional string fields from initialData are at least ""
+      fatherName: initialData.fatherName ?? "",
+      motherName: initialData.motherName ?? "",
+      alternatePhone: initialData.alternatePhone ?? "",
+      email: initialData.email ?? "",
+      emergencyContact: initialData.emergencyContact ?? "",
+      aadharNumber: initialData.aadharNumber ?? "",
+      address: initialData.address ?? "",
+      city: initialData.city ?? "",
+      state: initialData.state ?? "",
+      pincode: initialData.pincode ?? "",
+      remarks: initialData.remarks ?? "",
+      profilePictureUrl: initialData.profilePictureUrl ?? "",
+      programCertificateLink: initialData.programCertificateLink ?? "",
+      degreeCertificateLink: initialData.degreeCertificateLink ?? "",
+
+    } : defaultAddValues,
   });
   
   const { formState: { errors } } = form;
   useEffect(() => {
     if (Object.keys(errors).length > 0) {
-      console.log("Form errors:", errors);
+      console.log("Form validation errors:", errors);
     }
   }, [errors]);
 
@@ -152,7 +170,22 @@ export function AddStudentForm({ initialData, studentId }: AddStudentFormProps) 
         totalFees: initialData.totalFees ?? undefined,
         feesSubmitted: initialData.feesSubmitted ?? undefined,
         courseDurationInMonths: initialData.courseDurationInMonths ?? undefined,
-        semesterLinks: initialData.semesterLinks && initialData.semesterLinks.length > 0 ? initialData.semesterLinks : [{ semester: "", link: "" }],
+        semesterLinks: initialData.semesterLinks && initialData.semesterLinks.length > 0 ? initialData.semesterLinks.map(sl => ({ semester: sl.semester || "", link: sl.link || "" })) : [{ semester: "", link: "" }],
+        // Ensure all optional string fields are at least ""
+        fatherName: initialData.fatherName ?? "",
+        motherName: initialData.motherName ?? "",
+        alternatePhone: initialData.alternatePhone ?? "",
+        email: initialData.email ?? "",
+        emergencyContact: initialData.emergencyContact ?? "",
+        aadharNumber: initialData.aadharNumber ?? "",
+        address: initialData.address ?? "",
+        city: initialData.city ?? "",
+        state: initialData.state ?? "",
+        pincode: initialData.pincode ?? "",
+        remarks: initialData.remarks ?? "",
+        profilePictureUrl: initialData.profilePictureUrl ?? "",
+        programCertificateLink: initialData.programCertificateLink ?? "",
+        degreeCertificateLink: initialData.degreeCertificateLink ?? "",
       };
       form.reset(transformedInitialData as StudentFormValues);
     }
@@ -184,41 +217,7 @@ export function AddStudentForm({ initialData, studentId }: AddStudentFormProps) 
           description: mode === 'edit' ? "Student updated successfully." : "Student added successfully.",
         });
         if (mode === 'add') {
-            form.reset({ 
-              enrollmentNumber: "",
-              firstName: "",
-              lastName: "",
-              fatherName: "",
-              motherName: "",
-              dateOfBirth: undefined,
-              gender: undefined,
-              bloodGroup: undefined,
-              category: undefined,
-              phone: "",
-              alternatePhone: "",
-              email: "",
-              emergencyContact: "",
-              aadharNumber: "",
-              address: "",
-              city: "",
-              state: "",
-              pincode: "",
-              course: "",
-              programType: undefined,
-              batch: "",
-              admissionDate: "",
-              courseDurationInMonths: undefined,
-              totalFees: undefined,
-              feesSubmitted: undefined,
-              remarks: "",
-              status: "Active",
-              certificateStatus: "Pending",
-              profilePictureUrl: "",
-              programCertificateLink: "",
-              degreeCertificateLink: "",
-              semesterLinks: [{ semester: "", link: "" }],
-              graduationDate: undefined,
-            }); 
+            form.reset(defaultAddValues); 
         }
         router.push("/admin/students/manage");
         router.refresh(); 
@@ -485,7 +484,7 @@ export function AddStudentForm({ initialData, studentId }: AddStudentFormProps) 
                 <FormField control={form.control} name="courseDurationInMonths" render={({ field }) => (
                     <FormItem>
                         <FormLabel>Course Duration (Months) *</FormLabel>
-                        <FormControl><Input type="number" placeholder="e.g., 24" {...field} onChange={e => field.onChange(e.target.value === "" ? undefined : parseInt(e.target.value,10) )}/></FormControl>
+                        <FormControl><Input type="number" placeholder="e.g., 24" {...field} onChange={e => field.onChange(e.target.value === "" ? undefined : parseInt(e.target.value,10) )} value={field.value ?? ""} /></FormControl>
                         <FormMessage />
                     </FormItem>
                 )} />
@@ -571,14 +570,14 @@ export function AddStudentForm({ initialData, studentId }: AddStudentFormProps) 
                     <FormField control={form.control} name={`semesterLinks.${index}.semester`} render={({ field }) => (
                       <FormItem className="flex-1">
                         <FormLabel className="text-xs">Semester Name *</FormLabel>
-                        <FormControl><Input placeholder={`e.g., Semester ${index + 1}`} {...field} /></FormControl>
+                        <FormControl><Input placeholder={`e.g., Semester ${index + 1}`} {...field} value={field.value ?? ""} /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )} />
                     <FormField control={form.control} name={`semesterLinks.${index}.link`} render={({ field }) => (
                       <FormItem className="flex-1">
                         <FormLabel className="text-xs">GDrive Link *</FormLabel>
-                        <FormControl><Input placeholder="Marksheet GDrive link" {...field} /></FormControl>
+                        <FormControl><Input placeholder="Marksheet GDrive link" {...field} value={field.value ?? ""} /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )} />
@@ -661,3 +660,5 @@ export function AddStudentForm({ initialData, studentId }: AddStudentFormProps) 
     </Form>
   );
 }
+
+    
