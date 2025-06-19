@@ -19,6 +19,7 @@ export async function addStudent(studentData: StudentFormValues): Promise<string
       updatedAt: serverTimestamp(),
     };
 
+    console.log("Attempting to add student document to Firestore:", studentDoc);
     const docRef = await addDoc(collection(db, STUDENTS_COLLECTION), studentDoc);
     return docRef.id;
   } catch (error: any) {
